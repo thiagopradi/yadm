@@ -4,6 +4,8 @@ import (
   "fmt"
   "flag"
   "os"
+  "net/http"
+  "io/ioutil"
 )
 
 func main() {
@@ -25,4 +27,20 @@ func main() {
 
   fmt.Printf("Address: %v \n", address)
   fmt.Printf("Number of connections: %d \n \n", number_of_connections)
+
+  resp, err := http.Get(address)
+
+  if err != nil {
+    fmt.Printf("Download failed. Reason: \n")
+    fmt.Printf("%v \n", err)
+    os.Exit(2)
+  }
+
+  defer resp.Body.Close()
+
+  str, err := ioutil.ReadAll(resp.Body)
+
+  fmt.Printf("%v", string(str))
+
+  fmt.Printf("\n \n Download Finished! \n")
 }
