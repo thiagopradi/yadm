@@ -5,7 +5,7 @@ import (
   "flag"
   "os"
   "net/http"
-  "io/ioutil"
+  "io"
 )
 
 func main() {
@@ -40,21 +40,15 @@ func main() {
 
   defer resp.Body.Close()
 
-  response, err_read := ioutil.ReadAll(resp.Body)
+  out, err_create := os.Create(output_file)
 
-  if err_read != nil {
-    fmt.Printf("Failed to read error body. Reason: \n")
-    fmt.Printf("%v \n", err_read)
+  if err_create != nil {
+    fmt.Printf("Failed to create file. Reason: \n")
+    fmt.Printf("%v \n", err_create)
     os.Exit(3)
   }
 
-  err_io := ioutil.WriteFile(output_file, response, os.FileMode(0777))
-
-  if err_io != nil {
-    fmt.Printf("Failed to write file. Reason: \n")
-    fmt.Printf("%v \n", err_io)
-    os.Exit(4)
-  }
+  io.Copy(out, resp.Body)
 
   fmt.Printf("\n \n Download Finished! \n")
 }
