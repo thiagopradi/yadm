@@ -10,9 +10,11 @@ import (
 
 func main() {
   var address string
+  var output_file string
   var number_of_connections int
 
   flag.StringVar(&address, "a", "", "The address to download the file")
+  flag.StringVar(&output_file, "o", "output.txt", "The default output file")
   flag.IntVar(&number_of_connections, "n", 1, "Number of connections to download the file")
 
   flag.Parse()
@@ -38,9 +40,21 @@ func main() {
 
   defer resp.Body.Close()
 
-  str, err := ioutil.ReadAll(resp.Body)
+  response, err_read := ioutil.ReadAll(resp.Body)
 
-  fmt.Printf("%v", string(str))
+  if err_read != nil {
+    fmt.Printf("Failed to read error body. Reason: \n")
+    fmt.Printf("%v \n", err_read)
+    os.Exit(3)
+  }
+
+  err_io := ioutil.WriteFile(output_file, response, os.FileMode(0777))
+
+  if err_io != nil {
+    fmt.Printf("Failed to write file. Reason: \n")
+    fmt.Printf("%v \n", err_io)
+    os.Exit(4)
+  }
 
   fmt.Printf("\n \n Download Finished! \n")
 }
