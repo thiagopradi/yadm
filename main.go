@@ -40,6 +40,14 @@ func main() {
 
   fmt.Printf("File Size: %d Bytes \n", head_resp.ContentLength)
 
+  out, err_create := os.Create(output_file)
+
+  if err_create != nil {
+    fmt.Printf("Failed to create file. Reason: \n")
+    fmt.Printf("%v \n", err_create)
+    os.Exit(3)
+  }
+
   start_byte := int64(0)
   section_number := 0
   section_size := int64(head_resp.ContentLength) / int64(number_of_connections)
@@ -65,14 +73,6 @@ func main() {
   }
 
   defer resp.Body.Close()
-
-  out, err_create := os.Create(output_file)
-
-  if err_create != nil {
-    fmt.Printf("Failed to create file. Reason: \n")
-    fmt.Printf("%v \n", err_create)
-    os.Exit(3)
-  }
 
   io.Copy(out, resp.Body)
 
