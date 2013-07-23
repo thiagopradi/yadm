@@ -61,20 +61,27 @@ func main() {
     }
 
     fmt.Printf("Section %d: From %d to %d Bytes \n", section_number, start_byte, end_byte)
-    start_byte = start_byte + section_size
+
+    client := &http.Client{}
+    req, _ := http.NewRequest("GET", address, nil)
+    header_string := fmt.Sprintf("bytes=%d-%d", start_byte, end_byte)
+    fmt.Printf("Header String %v \n", header_string)
+
+    req.Header.Set("Range", header_string)
+    res, err := client.Do(req)
+
+    if err != nil {
+      fmt.Printf("Download failed. Reason: \n")
+      fmt.Printf("%v \n", err)
+      os.Exit(2)
+    }
+
+    defer res.Body.Close()
+
+    io.Copy(out, res.Body)
+
+    start_byte = start_byte + section_size + 1
   }
-
-  resp, err := http.Get(address)
-
-  if err != nil {
-    fmt.Printf("Download failed. Reason: \n")
-    fmt.Printf("%v \n", err)
-    os.Exit(2)
-  }
-
-  defer resp.Body.Close()
-
-  io.Copy(out, resp.Body)
 
   fmt.Printf("\n \n Download Finished! \n")
 }
