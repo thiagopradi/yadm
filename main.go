@@ -30,6 +30,32 @@ func main() {
   fmt.Printf("Address: %v \n", address)
   fmt.Printf("Number of connections: %d \n \n", number_of_connections)
 
+  head_resp, head_err := http.Head(address)
+
+  if head_err != nil {
+    fmt.Printf("Download failed. Reason: \n")
+    fmt.Printf("%v \n", head_err)
+    os.Exit(2)
+  }
+
+  fmt.Printf("File Size: %d Bytes \n", head_resp.ContentLength)
+
+  start_byte := int64(0)
+  section_number := 0
+  section_size := int64(head_resp.ContentLength) / int64(number_of_connections)
+
+  for(section_number < number_of_connections) {
+    end_byte := start_byte + section_size
+    section_number = section_number + 1
+
+    if int64(head_resp.ContentLength) - end_byte  < section_size { 
+      end_byte = int64(head_resp.ContentLength)
+    }
+
+    fmt.Printf("Section %d: From %d to %d Bytes \n", section_number, start_byte, end_byte)
+    start_byte = start_byte + section_size
+  }
+
   resp, err := http.Get(address)
 
   if err != nil {
