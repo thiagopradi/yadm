@@ -8,6 +8,25 @@ import (
   "io"
 )
 
+func makeRequest(address string, start_byte int64, end_byte int64) (*http.Response) {
+  client := &http.Client{}
+  req, _ := http.NewRequest("GET", address, nil)
+  header_string := fmt.Sprintf("bytes=%d-%d", start_byte, end_byte)
+  fmt.Printf("Header String %v \n", header_string)
+
+  req.Header.Set("Range", header_string)
+  res, err := client.Do(req)
+
+  if err != nil {
+    fmt.Printf("Download failed. Reason: \n")
+    fmt.Printf("%v \n", err)
+    os.Exit(2)
+    return nil
+  } else {
+    return res
+  }
+}
+
 func main() {
   var address string
   var output_file string
@@ -51,30 +70,19 @@ func main() {
   start_byte := int64(0)
   section_number := 0
   section_size := int64(head_resp.ContentLength) / int64(number_of_connections)
-
+  /* channels := make(chan *http.Response, number_of_connections) */
+  
   for(section_number < number_of_connections) {
     end_byte := start_byte + section_size
     section_number = section_number + 1
 
-    if int64(head_resp.ContentLength) - end_byte  < section_size { 
+    if int64(head_resp.ContentLength) - end_byte < section_size { 
       end_byte = int64(head_resp.ContentLength)
     }
 
     fmt.Printf("Section %d: From %d to %d Bytes \n", section_number, start_byte, end_byte)
 
-    client := &http.Client{}
-    req, _ := http.NewRequest("GET", address, nil)
-    header_string := fmt.Sprintf("bytes=%d-%d", start_byte, end_byte)
-    fmt.Printf("Header String %v \n", header_string)
-
-    req.Header.Set("Range", header_string)
-    res, err := client.Do(req)
-
-    if err != nil {
-      fmt.Printf("Download failed. Reason: \n")
-      fmt.Printf("%v \n", err)
-      os.Exit(2)
-    }
+    res := makeRequest(address, start_byte, end_byte)
 
     defer res.Body.Close()
 
