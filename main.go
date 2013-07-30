@@ -8,7 +8,7 @@ import (
   "io"
 )
 
-func makeRequest(address string, start_byte int64, end_byte int64) (*http.Response) {
+func makeRequest(address string, start_byte int64, end_byte int64, out *os.File) {
   client := &http.Client{}
   req, _ := http.NewRequest("GET", address, nil)
   header_string := fmt.Sprintf("bytes=%d-%d", start_byte, end_byte)
@@ -21,9 +21,9 @@ func makeRequest(address string, start_byte int64, end_byte int64) (*http.Respon
     fmt.Printf("Download failed. Reason: \n")
     fmt.Printf("%v \n", err)
     os.Exit(2)
-    return nil
   } else {
-    return res
+    defer res.Body.Close()
+    io.Copy(out, res.Body)
   }
 }
 
@@ -82,11 +82,7 @@ func main() {
 
     fmt.Printf("Section %d: From %d to %d Bytes \n", section_number, start_byte, end_byte)
 
-    res := makeRequest(address, start_byte, end_byte)
-
-    defer res.Body.Close()
-
-    io.Copy(out, res.Body)
+    makeRequest(address, start_byte, end_byte, out)
 
     start_byte = start_byte + section_size + 1
   }
