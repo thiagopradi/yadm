@@ -8,7 +8,12 @@ import (
   "io"
 )
 
-func makeRequest(address string, start_byte int64, end_byte int64, out *os.File) {
+type ChannelResult struct {
+    Res *http.Response
+    StartByte int64
+}
+
+func makeRequest(address string, start_byte int64, end_byte int64, out *os.File, channes chan ChannelResult) {
   client := &http.Client{}
   req, _ := http.NewRequest("GET", address, nil)
   header_string := fmt.Sprintf("bytes=%d-%d", start_byte, end_byte)
@@ -22,8 +27,10 @@ func makeRequest(address string, start_byte int64, end_byte int64, out *os.File)
     fmt.Printf("%v \n", err)
     os.Exit(2)
   } else {
-    defer res.Body.Close()
-    io.Copy(out, res.Body)
+    ret := new(ChannelResult)
+    ret.StartByte = start_byte
+    ret.Res =  res
+    channes <- *ret
   }
 }
 
@@ -70,7 +77,7 @@ func main() {
   start_byte := int64(0)
   section_number := 0
   section_size := int64(head_resp.ContentLength) / int64(number_of_connections)
-  /* channels := make(chan *http.Response, number_of_connections) */
+  channels := make(chan ChannelResult, number_of_connections)
   
   for(section_number < number_of_connections) {
     end_byte := start_byte + section_size
@@ -82,9 +89,33 @@ func main() {
 
     fmt.Printf("Section %d: From %d to %d Bytes \n", section_number, start_byte, end_byte)
 
-    makeRequest(address, start_byte, end_byte, out)
+    go makeRequest(address, start_byte, end_byte, out, channels)
 
     start_byte = start_byte + section_size + 1
+  }
+
+  loop_var := 0
+
+  for(loop_var < number_of_connections) {
+    chan_res := <-channels
+
+    defer chan_res.Res.Body.Close()
+
+    fmt.Printf("\n Start Byte! %d", chan_res.StartByte)
+
+    val, err := out.Seek(chan_res.StartByte, 0)
+
+    if err != nil {
+      fmt.Printf("Failed to seek. Reason:")
+      fmt.Printf("%v \n", err)
+      os.Exit(4)
+    }
+
+    fmt.Printf("\n Val! %d", val)
+
+    io.Copy(out, chan_res.Res.Body)
+
+    loop_var = loop_var + 1
   }
 
   fmt.Printf("\n \n Download Finished! \n")
