@@ -101,8 +101,6 @@ func main() {
 
     defer chan_res.Res.Body.Close()
 
-    fmt.Printf("\n Start Byte! %d", chan_res.StartByte)
-
     val, err := out.Seek(chan_res.StartByte, 0)
 
     if err != nil {
@@ -110,8 +108,6 @@ func main() {
       fmt.Printf("%v \n", err)
       os.Exit(4)
     }
-
-    fmt.Printf("\n Val! %d", val)
 
     io.Copy(out, chan_res.Res.Body)
 
