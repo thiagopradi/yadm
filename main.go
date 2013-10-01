@@ -101,7 +101,7 @@ func main() {
 
     defer chan_res.Res.Body.Close()
 
-    val, err := out.Seek(chan_res.StartByte, 0)
+    _, err := out.Seek(chan_res.StartByte, 0)
 
     if err != nil {
       fmt.Printf("Failed to seek. Reason:")
